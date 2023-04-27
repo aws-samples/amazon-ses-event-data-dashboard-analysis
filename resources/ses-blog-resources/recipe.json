@@ -1,0 +1,168 @@
+[
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "bouncedRecipients",
+        "targetColumn": "bouncedRecipients_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_STRUCT_N",
+      "Parameters": {
+        "delimiter": "_",
+        "removeSourceColumn": "true",
+        "sourceColumns": "[\"bouncedRecipients_unnested\"]",
+        "unnestLevel": "120"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "complainedRecipients",
+        "targetColumn": "complainedRecipients_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_STRUCT_N",
+      "Parameters": {
+        "delimiter": "_",
+        "removeSourceColumn": "true",
+        "sourceColumns": "[\"complainedRecipients_unnested\"]",
+        "unnestLevel": "120"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "destination",
+        "targetColumn": "destination_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "ses:source-ip",
+        "targetColumn": "ses_source_ip_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "ses:outgoing-ip",
+        "targetColumn": "ses_outgoing_ip_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "delayedRecipients",
+        "targetColumn": "delayedRecipients_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_ARRAY",
+      "Parameters": {
+        "removeSourceColumn": "true",
+        "sourceColumn": "recipients",
+        "targetColumn": "recipients_unnested"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "UNNEST_STRUCT_N",
+      "Parameters": {
+        "delimiter": "_",
+        "removeSourceColumn": "true",
+        "sourceColumns": "[\"delayedRecipients_unnested\"]",
+        "unnestLevel": "120"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "MERGE",
+      "Parameters": {
+        "sourceColumns": "[\"bouncedRecipients_unnested_emailAddress\",\"complainedRecipients_unnested_emailAddress\",\"delayedRecipients_unnested_emailAddress\",\"recipients_unnested\"]",
+        "targetColumn": "recipientEvent"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "RENAME",
+      "Parameters": {
+        "sourceColumn": "destination_unnested",
+        "targetColumn": "recipientMail"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "EXTRACT_PATTERN",
+      "Parameters": {
+        "pattern": "(?<=@)[^.]+(?=.).*",
+        "sourceColumn": "recipientMail",
+        "targetColumn": "mailRecipientDomain"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "RENAME",
+      "Parameters": {
+        "sourceColumn": "source",
+        "targetColumn": "sender"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "DELETE",
+      "Parameters": {
+        "sourceColumns": "[\"bouncedRecipients_unnested_action\",\"bouncedRecipients_unnested_diagnosticCode\",\"bouncedRecipients_unnested_status\",\"contactList\",\"delayedRecipients_unnested_status\",\"delayedRecipients_unnested_diagnosticCode\"]"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "RENAME",
+      "Parameters": {
+        "sourceColumn": "ses_outgoing_ip_unnested",
+        "targetColumn": "sesOutgoingIp"
+      }
+    }
+  },
+  {
+    "Action": {
+      "Operation": "RENAME",
+      "Parameters": {
+        "sourceColumn": "ses_source_ip_unnested",
+        "targetColumn": "sesSourceIp"
+      }
+    }
+  }
+]

@@ -1,0 +1,44 @@
+{
+    "eventType": "",
+    "timestamp": "",
+    "ipAddress": "",
+    "userAgent": "",
+    "source": "",
+    "link": "",
+    "messageId": "",
+    "destination": [],
+    "ses:source-ip": [],
+    "ses:outgoing-ip": [],
+    "processingTimeMillis": "",
+    "recipients": [],
+    "bounceType": "",
+    "bouncedRecipients": [
+        {
+        "emailAddress":"",
+        "action":"",
+        "status":"",
+        "diagnosticCode":""
+        }
+    ],
+    "feedbackId": "",
+    "complainedRecipients": [
+        {
+        "emailAddress":""
+        }
+    ],
+    "complaintFeedbackType": "",
+    "reason": "",
+    "errorMessage": "",
+    "templateName": "",
+    "delayType": "",
+    "expirationTime": "",
+    "delayedRecipients": [
+        {
+        "emailAddress":"",
+        "status": "",
+        "diagnosticCode": ""
+        }
+    ],
+    "contactList": "",
+    "subject": ""
+}
