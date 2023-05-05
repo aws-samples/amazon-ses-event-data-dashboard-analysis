@@ -42,7 +42,7 @@ export class SesBlogSolutionStack extends Stack {
 
     // Create a Lambda function that copies objects from destinationBucket to aggregatedBucket
     const lambdaCopyFunction = new Function(this, 'SESPartitionedObjectReplicationFunction', {
-      runtime: Runtime.NODEJS_12_X,
+      runtime: Runtime.NODEJS_18_X,
       handler: 'index.handler',
       functionName: 'SESPartitionedObjectReplicationFunction',
       code: Code.fromInline(replicationLambdaCode.toString()),
@@ -62,7 +62,7 @@ export class SesBlogSolutionStack extends Stack {
     aggregatedBucket.grantWrite(lambdaCopyFunction);
 
     NagSuppressions.addResourceSuppressions(destinationBucket, [
-      {id: 'AwsSolutions-S1', reason: 'Access logs disabled'},
+      {id: 'AwsSolutions-S1', reason: 'Bucket used for example with access logs disabled'},
     ]);
 
      // Create a Lambda function that transforms data in Kinesis Firehose
@@ -201,7 +201,7 @@ export class SesBlogSolutionStack extends Stack {
       databaseInput: {
         name: 'ses_event_data_database'
       }
-    })
+    });
 
     // Create the glue crawler service role
     const crawlerServiceRole: iam.Role = new iam.Role(this, 'crawlerServiceRole', {
@@ -246,12 +246,85 @@ export class SesBlogSolutionStack extends Stack {
     // Athena workgroup
     new athena.CfnWorkGroup(this, 'SesAthenaWorkgroup', {
       name: 'SesAthenaWorkgroup',
-
       workGroupConfiguration: {
         resultConfiguration: {
-          outputLocation: "s3://" + athenaResultsBucket.bucketName,
+          outputLocation: `s3://${athenaResultsBucket.bucketName}`,
+          encryptionConfiguration: {
+            encryptionOption: 'SSE_S3'
+          }
         },
       },
-    }); 
+    });
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/crawlerServiceRole/DefaultPolicy/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM5', reason: 'Policy is scoped down to the bucket that is crawled and wildcard are used for actions'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/crawlerServiceRole/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM4', reason: 'Service role is used by the crawler'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/SESPartitionedObjectReplicationFunction/ServiceRole/DefaultPolicy/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM5', reason: 'Policy is scoped down to the bucket that need to be accessed by Lambda and lambda use basic execution role for cloudwatch'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/SESPartitionedObjectReplicationFunction/ServiceRole/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM4', reason: 'Service role is used by the lambda'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM5', reason: 'Policy is scoped down to the bucket that need to be accessed by Lambda and lambda use basic execution role for cloudwatch'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM4', reason: 'Service role is used by the lambda and uses basic lambda execution role cloudwatch log'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/SESEventsTransformationFunction/ServiceRole/Resource',
+      [ 
+        {id: 'AwsSolutions-IAM4', reason: 'Service role is used by the lambda and uses basic lambda execution role cloudwatch log'}
+      ]
+    );
+    
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/SesAthenaWorkgroup',
+      [ 
+        {id: 'AwsSolutions-ATH1', reason: 'Athena uses SSE_S3 to encrypt results'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/ses-events-destination-aggregated/Resource',
+      [ 
+        {id: 'AwsSolutions-S1', reason: 'Bucket used for sample solution no need to server access log'}
+      ]
+    );
+
+    NagSuppressions.addResourceSuppressionsByPath(this, 
+      '/SesBlogSolutionStack/AthenaResultsBucket/Resource',
+      [ 
+        {id: 'AwsSolutions-S1', reason: 'Bucket used for sample solution no need to server access log'}
+      ]
+    );
+
   }
 }

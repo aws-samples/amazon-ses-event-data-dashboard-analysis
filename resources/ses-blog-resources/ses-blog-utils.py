@@ -18,14 +18,26 @@ This script requires:
 
 import json
 import boto3
-import sys
 import logging
 import uuid
 import time
 from boto3 import Session
+import argparse
 
 logging.basicConfig(level=logging.INFO)
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+                    prog='ses-blog-setup',
+                    description='Automates the creation of the Amazon QuickSight data source, dataset and dashboard',
+                    epilog='Check the README for more information')
+
+    parser.add_argument('-a', '--account-id', required=True, metavar='', help="AWS Account ID")
+    parser.add_argument('-r', '--region', required=True, metavar='', help="AWS Region")
+    parser.add_argument('-p', '--profile', metavar='', help="AWS credentials Profile")
+    args = parser.parse_args()
+    
+    return args
 
 def get_quicksight_user(client, account_id, namespace) -> str:
     """
@@ -434,26 +446,23 @@ def create_dashboard(client, account_id, region, quicksight_user, dataset_id, da
             
     logging.info("Dashboard ARN: " + dashboard['Arn'])
 
-def main():
-    # check if the required parameters, in order (1) AWS account ID, (2) AWS Region and (3, optional) 
-    # AWS CLI profile are present
-
+def main(args):
     aws_session = Session
+    region = args.region
+    account_id = args.account_id
 
-    if len(sys.argv) >= 3:
-        account_id = sys.argv[1]
-        region = sys.argv[2]
-        if len(sys.argv) == 4:
-            profile = sys.argv[3]
-            aws_session = boto3.Session(profile_name=profile)
-            logging.info(
-                f"Input parameters: account id {account_id}, region '{region}', profile '{profile}'.")
+    if args.profile:
+        profile = args.profile
 
-        else:
-            aws_session = boto3.Session(region_name=region)
-            
-            logging.info(
-                f"Input parameters: account id {account_id}, region '{region}', profile 'default'.")
+        aws_session = boto3.Session(profile_name=profile)
+        logging.info(
+            f"Input parameters: account id {account_id}, region '{region}', profile '{profile}'.")
+
+    else:
+        aws_session = boto3.Session(region_name=region)
+        
+        logging.info(
+            f"Input parameters: account id {account_id}, region '{region}', profile 'default'.")
 
         namespace = "default"                                   # Amazon QuickSight namespace
         data_source_id = "AthenaDataSource"                     # Amazon QuickSight data source id
@@ -479,10 +488,7 @@ def main():
         except Exception as e:
             logging.error(e)
 
-    else:
-        logging.error(
-            "You need to define the account id and region for running the script.")
-
 
 if __name__ == "__main__":
-    main()
+    args = parse_arguments()
+    main(args)
