@@ -22,6 +22,7 @@ import sys
 import logging
 import uuid
 import time
+from boto3 import Session
 
 logging.basicConfig(level=logging.INFO)
 
@@ -436,17 +437,21 @@ def create_dashboard(client, account_id, region, quicksight_user, dataset_id, da
 def main():
     # check if the required parameters, in order (1) AWS account ID, (2) AWS Region and (3, optional) 
     # AWS CLI profile are present
+
+    aws_session = Session
+
     if len(sys.argv) >= 3:
         account_id = sys.argv[1]
         region = sys.argv[2]
         if len(sys.argv) == 4:
             profile = sys.argv[3]
-            boto3.setup_default_session(profile_name=profile)
+            aws_session = boto3.Session(profile_name=profile)
             logging.info(
                 f"Input parameters: account id {account_id}, region '{region}', profile '{profile}'.")
 
         else:
-            boto3.setup_default_session(profile_name="default")
+            aws_session = boto3.Session(region_name=region)
+            
             logging.info(
                 f"Input parameters: account id {account_id}, region '{region}', profile 'default'.")
 
@@ -461,7 +466,7 @@ def main():
         dashboard_template_file = "dashboard_definition.json"   # Amazon QuickSight dashboard template, stored externally as a JSON file
 
         try:
-            client = boto3.client('quicksight')
+            client = aws_session.client('quicksight')
             quicksight_user = get_quicksight_user(
                 client, account_id, namespace)
             create_data_source(client, account_id, quicksight_user,

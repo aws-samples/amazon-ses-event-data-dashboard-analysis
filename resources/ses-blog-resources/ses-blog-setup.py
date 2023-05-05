@@ -25,6 +25,8 @@ import logging
 import shutil
 import os
 from botocore.exceptions import ClientError
+from boto3 import Session
+import zipfile
 
 
 logging.basicConfig(level=logging.INFO)
@@ -47,16 +49,42 @@ def create_bucket(s3_client, bucket_name, region):
         
     return response['Location']
 
+def check_files():
+    directory = os.getcwd()  # Get the current directory
+    file1 = "ses-blog-setup.py"  # Specify the first file name
+    file2 = "ses-blog-utils.py"  # Specify the second file name
+
+    files = os.listdir(directory)  # Get all files in the directory
+
+    if file1 in files and file2 in files:
+        return True
+    else:
+        return False
+
 def upload_resources(s3_client, folder_name, key, dest_bucket):
+
+    file1 = "schema.json"  # Specify the first file name
+    file2 = "index.py"  # Specify the second file name
+
+    output_filename = "temp"
+    file_format = "zip"
+
     try:
         # zip folder
-        output_filename = "temp"
-        format = "zip"
-        shutil.make_archive(output_filename, format, folder_name)
+
+        file_in_root = check_files()
+
+        if file_in_root:
+
+            with zipfile.ZipFile(f"{output_filename}.{file_format}", 'w') as zipf:
+                zipf.write(file1)
+                zipf.write(file2)
+        else:
+            shutil.make_archive(output_filename, file_format, folder_name)
 
         # upload zipped folder
         s3_client.upload_file(
-            Filename = ".".join([output_filename, format]),
+            Filename = ".".join([output_filename, file_format]),
             Bucket = dest_bucket,
             Key = key
         )
@@ -67,27 +95,32 @@ def upload_resources(s3_client, folder_name, key, dest_bucket):
     except Exception as e:
         logging.error(e)
 
+
+
 def main():
     # check if the required parameters, in order (1) AWS account ID, (2) AWS Region and (3, optional) 
     # AWS CLI profile are present
+
+    aws_session = Session
+
     if len(sys.argv) >= 3:
         account_id = sys.argv[1]
         region = sys.argv[2]
         if len(sys.argv) == 4:
             profile = sys.argv[3]
-            boto3.setup_default_session(profile_name=profile)
+            aws_session = boto3.Session(profile_name=profile)
             logging.info(
                 f"Input parameters: account id {account_id}, region '{region}', profile '{profile}'.")
 
         else:
-            boto3.setup_default_session(profile_name="default")
+            aws_session = boto3.Session(region_name=region)
             logging.info(
                 f"Input parameters: account id {account_id}, region '{region}', profile 'default'.")
 
 
     folder_name = "../TransformationLambdaCode"
     key = "TransformationLambdaCode.zip"
-    s3_client = boto3.client('s3', region_name=region)
+    s3_client = aws_session.client('s3', region_name=region)
 
     # create bucket
     dest_bucket = f"{account_id}-{region}-ses-blog-utils-bucket"
