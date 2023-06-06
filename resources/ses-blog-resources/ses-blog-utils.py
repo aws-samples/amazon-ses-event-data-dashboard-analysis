@@ -456,37 +456,39 @@ def main(args):
 
         aws_session = boto3.Session(profile_name=profile)
         logging.info(
-            f"Input parameters: account id {account_id}, region '{region}', profile '{profile}'.")
+            f"Input parameters: account id {account_id}, region '{region}', profile '{profile}'."
+        )
 
     else:
         aws_session = boto3.Session(region_name=region)
         
         logging.info(
-            f"Input parameters: account id {account_id}, region '{region}', profile 'default'.")
+            f"Input parameters: account id {account_id}, region '{region}', profile 'default'."
+        )
 
-        namespace = "default"                                   # Amazon QuickSight namespace
-        data_source_id = "AthenaDataSource"                     # Amazon QuickSight data source id
-        data_source_name = "Athena Data Source"                 # Amazon QuickSight data source name
-        athena_workgroup_name = "SesAthenaWorkgroup"            # Amazon Athena workgroup name, defined in the CloudFormation template
-        dataset_id = str(uuid.uuid4())                          # Amazon QuickSight dataset id
-        dataset_name = "partitioned"                            # Amazon QuickSight dataset name
-        dashboard_id = "MySESLogDashboard"                      # Amazon QuickSight dashboard id
-        dashboard_name = "MySESLogDashboard"                    # Amazon QuickSight dashboard name
-        dashboard_template_file = "dashboard_definition.json"   # Amazon QuickSight dashboard template, stored externally as a JSON file
+    namespace = "default"                                   # Amazon QuickSight namespace
+    data_source_id = "AthenaDataSource"                     # Amazon QuickSight data source id
+    data_source_name = "Athena Data Source"                 # Amazon QuickSight data source name
+    athena_workgroup_name = "SesAthenaWorkgroup"            # Amazon Athena workgroup name, defined in the CloudFormation template
+    dataset_id = str(uuid.uuid4())                          # Amazon QuickSight dataset id
+    dataset_name = "partitioned"                            # Amazon QuickSight dataset name
+    dashboard_id = "MySESLogDashboard"                      # Amazon QuickSight dashboard id
+    dashboard_name = "MySESLogDashboard"                    # Amazon QuickSight dashboard name
+    dashboard_template_file = "dashboard_definition.json"   # Amazon QuickSight dashboard template, stored externally as a JSON file
 
-        try:
-            client = aws_session.client('quicksight')
-            quicksight_user = get_quicksight_user(
-                client, account_id, namespace)
-            create_data_source(client, account_id, quicksight_user,
-                               data_source_id, data_source_name, athena_workgroup_name)
-            create_dataset(client, account_id, region, data_source_id,
-                           quicksight_user, dataset_id, dataset_name)
-            create_dashboard(client, account_id, region, quicksight_user,
-                             dataset_id, dashboard_id, dashboard_name, dashboard_template_file)
+    try:
+        client = aws_session.client('quicksight')
+        quicksight_user = get_quicksight_user(
+            client, account_id, namespace)
+        create_data_source(client, account_id, quicksight_user,
+                            data_source_id, data_source_name, athena_workgroup_name)
+        create_dataset(client, account_id, region, data_source_id,
+                        quicksight_user, dataset_id, dataset_name)
+        create_dashboard(client, account_id, region, quicksight_user,
+                            dataset_id, dashboard_id, dashboard_name, dashboard_template_file)
 
-        except Exception as e:
-            logging.error(e)
+    except Exception as e:
+        logging.error(e)
 
 
 if __name__ == "__main__":

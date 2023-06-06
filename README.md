@@ -72,9 +72,15 @@ If you don't have an Amazon QuickSight account yet, you can follow the instructi
     - Requirements for Python script - `requirements.txt`
     - CloudFormation template - `cfn.yaml`
     - Architecture diagram - `architecture.png`
-2. Run `python3 ses-blog-setup.py <account-id> <region> <profile?>`.
-    - It creates a new S3 bucket named `<account-id>-<region>-ses-blog-utils-bucket` in your account and region and copies the AWS Lambda function code that the CloudFormation needs.
-3. Navigate to the AWS CloudFormation console and launch the template `cfn.yaml`. Once you have the resources deployed, go to [common steps](#common-steps) below to continue.
+2. Run:
+    - `python3 -m venv venv` to create a virtual environment.
+    - `source venv/bin/activate` to activate the virtual environment.
+    - `pip3 install -r requirements.txt` to install the required dependencies.
+    - `python3 ses-blog-setup.py -a <account-id> -r <region> -p <cli-profile-name>`. Note that `-p` parameter is optional. If not specified, the script will use the default AWS CLI profile.
+        - It creates a new S3 bucket named `<account-id>-<region>-ses-blog-utils-bucket` in your account and region and copies the AWS Lambda function code that the CloudFormation needs.
+    - `deactivate` to deactivate the virtual environment.
+
+3. Navigate to the AWS CloudFormation console and [create a stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html) uploading the template `cfn.yaml`. Once you have the resources deployed, go to [common steps](#common-steps) below to continue.
 
 ### COMMON STEPS
 1. If you already have a verified Amazon Simple Email Service (SES) identity, you can skip this step. If not, follow these instructions to create an identity and verify it:
@@ -99,7 +105,8 @@ If you don't have an Amazon QuickSight account yet, you can follow the instructi
             - Name: `<custom-name>`
             - Delivery stream: `<your-cfn-stack-name>-KinesisFirehoseStream<random-code>`
             - Identity and Access Management (IAM) Role: `<your-cfn-stack-name>-SESRole<random-code>`
-        - Click on `Next`, review the information for accuracy and finally click on `Add Destination`. 
+        - Click on `Next`, review the information for accuracy and finally click on `Add Destination`.
+        - Before moving to the next step, wait a couple of minutes for the update to propagate. If you don't wait, in Step 3 you might see some data processing data failures. 
 3. Create some test emails that will serve as dummy data to fill the final Amazon QuickSight dashboard.    
     - Navigate to the Simple Email Service console, on the left panel, under `Configuration`, choose `Verified identities`.
     - Under `Identities` select the verified identity and click on `Send test email`
@@ -109,27 +116,29 @@ If you don't have an Amazon QuickSight account yet, you can follow the instructi
     - You can repeat this process several times to generate data that will fill the final dashboard. Emails sent through the simulator don't count towards your sending quota.
 4. Upload the AWS Glue DataBrew recipe:
     - Navigate to the DataBrew console, on the left panel choose `Recipes`.
-    - In the Recipes console, on the top left choose `Upload recipe`.
+    - In the Recipes console, choose `Upload recipe`.
         - Recipe name: `<recipe_name>`.
         - For Upload recipe choose `Upload` and select the file `resources/ses-blog-resources/recipe.json`.
         - Choose `Create and publish recipe`.
 5. Wait until you can see some events stored in `s3://<account-id>-<region>-ses-events-destination/raw/`.
 6. Create and run an AWS Glue DataBrew job. (It will fail if there isn't any data in the S3 bucket).
-    - Job Type: `Create a recipe job`
-    - Dataset: `SESDataBrewDataset`
-    - Recipe: `<recipe_created_before>`
-    - Output: `Amazon S3`
-        - Output File Type: `PARQUET`
-        - Output Compression: `GZIP`
-        - Output S3 Location: `s3://<account-id>-<region>-ses-events-destination/partitioned/`
-        - Settings: 
-            - File output storage: `Replace output files for each job run` 
-            - Custom partition by column values: `enabled`
-            - Columns to partition by: `year`, `month`, `day`, `hour`. In this exact order.
-    - Associated schedules:
-        - Select `Create new schedule`.
-        - Set run frequency to run every hour, every day.
-    - Role: `Create new IAM role`
+    - Navigate to the DataBrew console, on the left panel choose `Jobs`, then choose `Create job`.
+        - Job Type: `Create a recipe job`
+        - Dataset: `SESDataBrewDataset`
+        - Recipe: `<recipe_name>`, the one create before.
+        - Output: `Amazon S3`
+            - Output File Type: `PARQUET`
+            - Output Compression: `GZIP`
+            - Output S3 Location: `s3://<account-id>-<region>-ses-events-destination/partitioned/`. Don't forget the final `/`.
+            - Settings: 
+                - File output storage: `Replace output files for each job run` 
+                - Custom partition by column values: `enabled`
+                - Columns to partition by: `year`, `month`, `day`, `hour`. In this exact order.
+        - Associated schedules:
+            - Select `Create new schedule`.
+            - Set run frequency to run every hour, every day.
+        - Role: `Create new IAM role`.
+        - Choose `Create and run job`.
 7. Wait for the first execution of the job to end.
 8. Run glue crawler `SESEventDataCrawler` manually to force detection of the data structure. The crawler is scheduled to run every hour, 30 minutes past the hour.
     - Navigate to the AWS Glue console.
@@ -145,12 +154,17 @@ If you don't have an Amazon QuickSight account yet, you can follow the instructi
         - Under `Amazon S3`, click on `Select S3 buckets` 
             - Check the `S3 bucket` column for the bucket `<account_id>-<region>-ses-events-destination-aggregated`
             - Check the `S3 bucket` and `Write permission for Athena Workgroup` columns for the bucket `<account_id>-<region>-athena-results-location`
-11. Open `resources/ses-blog-resources/` folder in your terminal and run:
-    - `python3 -m venv venv` creates a virtual environment.
-    - `source venv/bin/activate` activates the virtual environment.
-    - `pip3 install -r requirements.txt` installs the required dependencies.
-    - `python3 ses-blog-utils.py <account_id> <region_id> <profile?>` creates the Amazon QuickSight dashboard.
-    - `deactivate` deactivate the virtual environment.
+11. Open `resources/ses-blog-resources/` folder in your terminal and, alternatively and depending on the chosen Option, run:
+    - Option A - Using AWS CDK
+        - `python3 -m venv venv` to create a virtual environment.
+        - `source venv/bin/activate` to activate the virtual environment.
+        - `pip3 install -r requirements.txt` to install the required dependencies.
+        - `python3 ses-blog-utils.py -a <account_id> -r <region_id> -p <profile>` to create the Amazon QuickSight dashboard. Note that `-p` parameter is optional. If not specified, the script will use the default AWS CLI profile.
+        - `deactivate` deactivate the virtual environment.
+    - Option B - Not using AWS CDK
+        - `source venv/bin/activate` activates the virtual environment.
+        - `python3 ses-blog-utils.py -a <account_id> -r <region_id> -p <profile>` creates the Amazon QuickSight dashboard. Note that profile is optional.
+        - `deactivate` to deactivate the virtual environment.
 12. Go to Amazon QuickSight and explore the dashboard.
 
 --- 

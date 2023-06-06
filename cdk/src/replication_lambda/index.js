@@ -1,5 +1,6 @@
-const aws = require("aws-sdk");
-const s3 = new aws.S3({ apiVersion: "2006-03-01" });
+const { S3Client, CopyObjectCommand } = require("@aws-sdk/client-s3");
+
+const client = new S3Client({});
 
 const sourcePrefix = process.env.SRC_PREFIX;
 const destinationBucket = process.env.DEST_BUCKET;
@@ -27,10 +28,8 @@ var copyParams = {
 //console.log(`Copying object to ${copyParams.Bucket}/${copyParams.Key}`);
 
 try {
-    await s3.copyObject(copyParams, function (err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    //else console.log('Response: ' + JSON.stringify(data, null, 2)); // successful response
-    }).promise();
+    const command = new CopyObjectCommand(copyParams);
+    const response = await client.send(command);
 } catch (err) {
     console.log(err);
     throw new Error(err);
