@@ -8,9 +8,13 @@ def lambda_handler(event, context):
 
     # remove firehose test events
     valid_records = [x for x in event['records'] if x['data'] != ""]
+    invalid_records = [x for x in event['records'] if x['data'] == ""]
+    for record in invalid_records:
+        record['result'] = 'Dropped'
 
-    output = map(parallel_process_record, valid_records)
-    output_list = list(output)
+    output_valid = map(parallel_process_record, valid_records)
+    output_valid_list = list(output_valid)
+    output_list = output_valid_list + invalid_records
     print(f"Successfully processed {len(output_list)} records")
     return {'records': output_list}
 
