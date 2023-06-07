@@ -106,7 +106,6 @@ If you don't have an Amazon QuickSight account yet, you can follow the instructi
             - Delivery stream: `<your-cfn-stack-name>-KinesisFirehoseStream<random-code>`
             - Identity and Access Management (IAM) Role: `<your-cfn-stack-name>-SESRole<random-code>`
         - Click on `Next`, review the information for accuracy and finally click on `Add Destination`.
-        - Before moving to the next step, wait a couple of minutes for the update to propagate. If you don't wait, in Step 3 you might see some data processing data failures. 
 3. Create some test emails that will serve as dummy data to fill the final Amazon QuickSight dashboard.    
     - Navigate to the Simple Email Service console, on the left panel, under `Configuration`, choose `Verified identities`.
     - Under `Identities` select the verified identity and click on `Send test email`

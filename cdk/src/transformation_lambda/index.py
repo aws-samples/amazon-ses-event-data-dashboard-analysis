@@ -6,21 +6,13 @@ def lambda_handler(event, context):
     output = []
     print("Event:\n",event)
 
-    # Check if firehose test or real event
-    if (event['records'][0]['data'] == ""):
-        print("Firehose test event.")
-        return {'records': [
-            {
-                'recordId': event['records'][0]['recordId'],
-                'result': 'Ok',
-                'data': ""
-            }]
-        }
-    else:
-        output = map(parallel_process_record, event['records'])
-        output_list = list(output)
-        print(f"Successfully processed {len(output_list)} records")
-        return {'records': output_list}
+    # remove firehose test events
+    valid_records = [x for x in event['records'] if x['data'] != ""]
+
+    output = map(parallel_process_record, valid_records)
+    output_list = list(output)
+    print(f"Successfully processed {len(output_list)} records")
+    return {'records': output_list}
 
 # Process records in event in parallel
 def parallel_process_record(record):
