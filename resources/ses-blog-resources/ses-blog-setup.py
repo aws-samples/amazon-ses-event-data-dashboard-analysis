@@ -53,9 +53,13 @@ def create_bucket(s3_client, bucket_name, region):
     
     # Create bucket
     try:
-        location = {'LocationConstraint': region}
-        response = s3_client.create_bucket(Bucket=bucket_name,
-                                CreateBucketConfiguration=location)
+        if region == 'us-east-1':
+            response = s3_client.create_bucket(Bucket=bucket_name)
+        else:
+            location = {'LocationConstraint': region}
+            response = s3_client.create_bucket(Bucket=bucket_name,
+                                    CreateBucketConfiguration=location)
+            
     except ClientError as e:
         logging.error(e)
         
@@ -134,7 +138,7 @@ def main(args):
     # create bucket
     dest_bucket = f"{account_id}-{region}-ses-blog-utils-bucket"
     destination_bucket = create_bucket(s3_client, dest_bucket, region)
-    logging.info("S3 bucket created: " + destination_bucket)
+    logging.info(f"S3 bucket created: {destination_bucket}")
         
     # copy resources to the bucket
     upload_resources(s3_client, folder_name, key, dest_bucket)
