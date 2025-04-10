@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@aws-cdk/aws-kinesisfirehose-destinations-alpha": "2.76.0-alpha.0",
-    "aws-cdk-lib": "2.76.0",
+    "aws-cdk-lib": "2.189.0",
     "cdk-nag": "2.26.5",
     "constructs": "^10.0.0",
     "fs": "0.0.1-security"
